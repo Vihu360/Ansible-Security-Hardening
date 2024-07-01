@@ -1,0 +1,11 @@
+---
+all:
+  children:
+    boxes:
+      children:
+        cloud:
+          hosts:
+            something:
+              ansible_host: 13.232.241.156
+              ansible_user: vihu
+              ansible_python_interpreter: /usr/bin/python3

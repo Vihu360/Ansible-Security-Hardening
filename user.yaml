@@ -1,0 +1,70 @@
+---
+- name: Manage users and packages
+  hosts: all
+  become: yes
+
+
+  vars:
+    vihu_pass: abcd
+
+
+  tasks:
+    - name: Add sudo package
+      apt:
+        name: sudo
+        state: present
+
+    - name: Add user vihu
+      user:
+        name: vihu
+        password: "{{ vihu_pass }}"
+        comment: Vivek Barnwal
+        uid: 1001
+        shell: /bin/bash
+        create_home: yes
+        password_lock: yes
+
+    - name: Add SSH public key
+      authorized_key:
+        user: vihu
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        state: present
+
+    - name: add vihu to sudoers
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        regexp: "^vihu ALL"
+        line: "vihu ALL=(ALL) NOPASSWD: ALL"
+        state: present
+      notify:
+        - restart ssh
+
+    - name: disallow root
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin No"
+        state: present
+      notify:
+        - restart ssh
+
+    - name: Totally block root access
+      file:
+        path: /root/.ssh/authorized_keys
+        state: absent
+
+    - name: disallow password auth
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication No"
+        state: present
+      notify:
+        - restart ssh
+
+
+  handlers:
+    - name: restart ssh
+      service: name=ssh
+        state=restarted
+        
